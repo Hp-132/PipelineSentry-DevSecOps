@@ -24,27 +24,27 @@ PipelineSentry explores a unified approach to pipeline security by combining det
 ## System Architecture
 
 ```mermaid
-%%{init: {"flowchart": {"htmlLabels": true, "nodeSpacing": 65, "rankSpacing": 65, "useMaxWidth": false}, "themeVariables": {"fontSize": "16px"}}}%%
+%%{init: {"flowchart": {"nodeSpacing": 70, "rankSpacing": 65, "useMaxWidth": true}, "themeVariables": {"fontSize": "16px"}}}%%
 flowchart TD
-    A["<div style='width:240px'>CI/CD Events and Webhooks</div>"] --> B["<div style='width:240px'>FastAPI Ingestion</div>"]
-    B --> C["<div style='width:240px'>RabbitMQ Message Broker</div>"]
-    C --> D["<div style='width:240px'>Detection Engine</div>"]
+    A["CI/CD Events and<br/>Webhooks"] --> B["FastAPI Ingestion"]
+    B --> C["RabbitMQ Message<br/>Broker"]
+    C --> D["Detection Engine"]
 
-    D --> E["<div style='width:210px'>Static Detection</div>"]
-    D --> F["<div style='width:210px'>Behavioural Detection</div>"]
-    D --> G["<div style='width:210px'>Runtime Detection</div>"]
-    D --> H["<div style='width:210px'>Supply-Chain Security</div>"]
+    D --> E["Static Detection"]
+    D --> F["Behavioural<br/>Detection"]
+    D --> G["Runtime Detection"]
+    D --> H["Supply-Chain<br/>Security"]
 
-    E --> I["<div style='width:240px'>Event Correlation</div>"]
+    E --> I["Event Correlation"]
     F --> I
     G --> I
     H --> I
 
-    I --> J["<div style='width:210px'>PostgreSQL Database</div>"]
-    I --> K["<div style='width:210px'>Redis Cache</div>"]
-    I --> L["<div style='width:240px'>Response and Recovery</div>"]
+    I --> J["PostgreSQL<br/>Database"]
+    I --> K["Redis Cache"]
+    I --> L["Response and<br/>Recovery"]
 
-    J --> M["<div style='width:240px'>React Security Dashboard</div>"]
+    J --> M["React Security<br/>Dashboard"]
 
     classDef service fill:#f0edff,stroke:#9b87f5,color:#222,stroke-width:1px
     class A,B,C,D,E,F,G,H,I,J,K,L,M service
