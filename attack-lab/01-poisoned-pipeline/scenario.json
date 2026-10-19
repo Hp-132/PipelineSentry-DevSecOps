@@ -1,0 +1,17 @@
+{
+  "name": "01 Poisoned pipeline execution",
+  "steps": [
+    {
+      "type": "github_webhook",
+      "event": "push",
+      "payload": "push.json",
+      "workflow_files": [{"path": ".github/workflows/pr-build.yml", "file": "workflow.yml"}]
+    }
+  ],
+  "expected": {
+    "rules": ["PPE-001", "INJ-001", "PERM-001", "SEC-003", "PIN-001"],
+    "layers": ["static"],
+    "rollup": true,
+    "min_rollup_score": 80
+  }
+}

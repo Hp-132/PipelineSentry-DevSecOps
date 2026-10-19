@@ -1,0 +1,113 @@
+name: pipelinesentry
+
+x-app-env: &app-env
+  DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+  RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672/%2F
+  REDIS_URL: redis://redis:6379/0
+  MAX_RETRIES: ${MAX_RETRIES:-3}
+  DEDUP_TTL_SECONDS: ${DEDUP_TTL_SECONDS:-86400}
+  CACHE_TTL_SECONDS: ${CACHE_TTL_SECONDS:-30}
+  ALLOW_UNSIGNED_WEBHOOKS: ${ALLOW_UNSIGNED_WEBHOOKS:-false}
+  GITHUB_WEBHOOK_SECRET: ${GITHUB_WEBHOOK_SECRET:-}
+  SCAN_ROOT: /app
+
+x-app-depends: &app-depends
+  postgres:
+    condition: service_healthy
+  rabbitmq:
+    condition: service_healthy
+  redis:
+    condition: service_healthy
+
+services:
+  postgres:
+    image: postgres:16.6-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?set in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set in .env}
+      POSTGRES_DB: ${POSTGRES_DB:?set in .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    hostname: rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:?set in .env}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?set in .env}
+    volumes:
+      - rabbitdata:/var/lib/rabbitmq
+    ports:
+      - "127.0.0.1:${RABBITMQ_UI_PORT:-15672}:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 20s
+
+  redis:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build: .
+    image: pipelinesentry:latest
+    environment: *app-env
+    depends_on: *app-depends
+    ports:
+      - "127.0.0.1:${API_PORT:-8000}:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 15s
+
+  worker:
+    image: pipelinesentry:latest
+    command: ["python", "-m", "detection.worker"]
+    environment: *app-env
+    depends_on:
+      <<: *app-depends
+      api:
+        condition: service_started
+    restart: unless-stopped
+
+  # Optional, Linux hosts only: docker compose --profile falco up -d
+  falco:
+    profiles: ["falco"]
+    image: falcosecurity/falco:0.39.2
+    privileged: true
+    command:
+      - falco
+      - -o
+      - engine.kind=modern_ebpf
+      - -o
+      - json_output=true
+      - -o
+      - http_output.enabled=true
+      - -o
+      - http_output.url=http://api:8000/events/falco
+    volumes:
+      - /var/run/docker.sock:/host/var/run/docker.sock:ro
+      - /proc:/host/proc:ro
+      - /etc:/host/etc:ro
+      - ./detection/runtime/pipelinesentry_rules.yaml:/etc/falco/rules.d/pipelinesentry_rules.yaml:ro
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  rabbitdata:

@@ -1,0 +1,21 @@
+{
+  "action": "completed",
+  "workflow_run": {
+    "id": 9000002,
+    "name": "CI",
+    "path": ".github/workflows/ci.yml",
+    "run_started_at": "2026-10-19T10:00:00Z",
+    "updated_at": "2026-10-19T10:05:10Z",
+    "conclusion": "success"
+  },
+  "repository": {"full_name": "example-org/demo-app"},
+  "pipelinesentry": {
+    "metrics": {
+      "step_count": 13,
+      "max_cpu_percent": 52.0,
+      "outbound_domains": ["github.com", "api.github.com", "pypi.org", "files.pythonhosted.org", "collector.exfil.test"],
+      "files_touched": ["src/app/main.py", "tests/test_main.py", "requirements.txt"],
+      "repo_operations": ["checkout", "status.create"]
+    }
+  }
+}

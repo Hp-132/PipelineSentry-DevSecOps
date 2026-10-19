@@ -1,0 +1,89 @@
+# Falco rules for CI runner containers. Loaded on top of Falco's default falco_rules.yaml,
+# which defines the spawned_process, outbound and open_read macros used here.
+
+- list: ps_shell_binaries
+  items: [bash, sh, zsh, dash, ash, ksh]
+
+- list: ps_runner_parents
+  items: [Runner.Worker, Runner.Listener, run.sh, runsvc.sh, make, npm, node, python, python3, pip, docker-entrypoi]
+
+- list: ps_netcat_binaries
+  items: [nc, ncat, netcat]
+
+- list: ps_miner_binaries
+  items: [xmrig, minerd, cpuminer, ethminer]
+
+- list: ps_suspicious_ports
+  items: [3333, 4444, 5555, 6666, 7777, 14444, 45700]
+
+- list: ps_allowed_ports
+  items: [53, 80, 443]
+
+- list: ps_credential_files
+  items: [/etc/shadow, /root/.aws/credentials, /home/runner/.aws/credentials,
+          /root/.git-credentials, /home/runner/.git-credentials,
+          /root/.docker/config.json, /home/runner/.docker/config.json]
+
+- list: ps_credential_readers
+  items: [ssh, git, git-remote-http, docker, aws, sshd]
+
+- macro: ps_in_container
+  condition: (container.id != host)
+
+- rule: PipelineSentry Reverse Shell in Runner
+  desc: Shell or netcat started with a network redirect inside a CI container
+  condition: >
+    spawned_process and ps_in_container and
+    ((proc.name in (ps_shell_binaries) and
+      (proc.cmdline contains "/dev/tcp/" or proc.cmdline contains "/dev/udp/" or proc.cmdline contains "bash -i"))
+     or (proc.name in (ps_netcat_binaries) and (proc.args contains "-e " or proc.args contains "-c ")))
+  output: >
+    Reverse shell pattern in runner (proc.name=%proc.name proc.cmdline=%proc.cmdline
+    proc.pname=%proc.pname user.name=%user.name container.id=%container.id container.name=%container.name)
+  priority: CRITICAL
+  tags: [pipelinesentry, ci, mitre_execution]
+
+- rule: PipelineSentry Unexpected Shell in Runner
+  desc: Shell spawned by a process that is not a normal CI runner parent
+  condition: >
+    spawned_process and ps_in_container and proc.name in (ps_shell_binaries) and
+    not proc.pname in (ps_runner_parents) and not proc.pname in (ps_shell_binaries)
+  output: >
+    Unexpected shell in runner (proc.name=%proc.name proc.cmdline=%proc.cmdline proc.pname=%proc.pname
+    container.id=%container.id container.name=%container.name)
+  priority: WARNING
+  tags: [pipelinesentry, ci, mitre_execution]
+
+- rule: PipelineSentry Suspicious Outbound Connection
+  desc: Runner connects to a known-bad port or a port outside the normal web/DNS set
+  condition: >
+    outbound and ps_in_container and
+    (fd.sport in (ps_suspicious_ports) or not fd.sport in (ps_allowed_ports))
+  output: >
+    Suspicious outbound connection from runner (proc.name=%proc.name proc.cmdline=%proc.cmdline
+    fd.sip=%fd.sip fd.sport=%fd.sport container.id=%container.id container.name=%container.name)
+  priority: WARNING
+  tags: [pipelinesentry, ci, mitre_exfiltration]
+
+- rule: PipelineSentry Credential File Read
+  desc: Credential file opened by a process that does not normally need it
+  condition: >
+    open_read and ps_in_container and
+    (fd.name in (ps_credential_files) or fd.name endswith "/.ssh/id_rsa" or fd.name endswith "/.ssh/id_ed25519") and
+    not proc.name in (ps_credential_readers)
+  output: >
+    Credential file read in runner (fd.name=%fd.name proc.name=%proc.name proc.cmdline=%proc.cmdline
+    container.id=%container.id container.name=%container.name)
+  priority: ERROR
+  tags: [pipelinesentry, ci, mitre_credential_access]
+
+- rule: PipelineSentry Crypto Miner Activity
+  desc: Known miner binary or mining-pool protocol on a runner
+  condition: >
+    spawned_process and
+    (proc.name in (ps_miner_binaries) or proc.cmdline contains "stratum+tcp" or proc.cmdline contains "stratum+ssl")
+  output: >
+    Crypto miner activity (proc.name=%proc.name proc.cmdline=%proc.cmdline container.id=%container.id
+    container.name=%container.name)
+  priority: CRITICAL
+  tags: [pipelinesentry, ci, mitre_impact]

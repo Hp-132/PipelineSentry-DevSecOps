@@ -1,0 +1,24 @@
+# Intentionally vulnerable. Never use in a real repository.
+name: PR Build
+on:
+  pull_request_target:
+    types: [opened, synchronize]
+permissions: write-all
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: tj-actions/changed-files@v44
+      - name: Greet
+        run: echo "Building ${{ github.event.pull_request.title }}"
+      - name: Build
+        run: |
+          npm ci
+          npm run build
+      - name: Debug
+        run: echo "token is $NPM_TOKEN"

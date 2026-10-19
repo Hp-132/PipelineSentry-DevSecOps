@@ -1,0 +1,14 @@
+{
+  "ref": "refs/heads/feature/release-pipeline",
+  "after": "0000000000000000000000000000000000000007",
+  "repository": {"full_name": "example-org/demo-app", "private": true},
+  "pusher": {"name": "synthetic-attacker"},
+  "commits": [
+    {
+      "id": "0000000000000000000000000000000000000007",
+      "message": "ci: update release workflow",
+      "added": [],
+      "modified": [".github/workflows/release.yml"]
+    }
+  ]
+}

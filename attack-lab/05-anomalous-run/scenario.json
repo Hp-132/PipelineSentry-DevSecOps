@@ -1,0 +1,16 @@
+{
+  "name": "05 Anomalous run behaviour",
+  "steps": [
+    {
+      "type": "github_webhook",
+      "event": "workflow_run",
+      "payload": "workflow_run.json"
+    }
+  ],
+  "expected": {
+    "rules": ["BEH-001"],
+    "behaviour_rules": ["new_outbound_domain", "sensitive_file_touched"],
+    "layers": ["behaviour"],
+    "rollup": false
+  }
+}

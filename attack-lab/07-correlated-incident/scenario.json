@@ -1,0 +1,30 @@
+{
+  "name": "07 Correlated multi-layer incident",
+  "steps": [
+    {
+      "type": "github_webhook",
+      "event": "push",
+      "payload": "push.json",
+      "workflow_files": [
+        {"path": ".github/workflows/release.yml", "file": "workflow.yml"}
+      ]
+    },
+    {
+      "type": "github_webhook",
+      "event": "workflow_run",
+      "payload": "workflow_run.json"
+    },
+    {
+      "type": "falco",
+      "file": "falco_events.jsonl",
+      "workflow": "release-runner"
+    }
+  ],
+  "expected": {
+    "rules": ["PPE-001", "BEH-001", "RT-SHELL"],
+    "behaviour_rules": ["new_outbound_domain", "sensitive_file_touched"],
+    "layers": ["static", "behaviour", "runtime"],
+    "rollup": true,
+    "min_rollup_score": 90
+  }
+}

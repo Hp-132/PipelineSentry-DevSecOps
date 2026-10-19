@@ -1,0 +1,14 @@
+{
+  "name": "04 Unsigned / tampered image",
+  "steps": [
+    {"type": "event", "kind": "image", "workflow": ".github/workflows/release.yml", "payload": "unsigned.json"},
+    {"type": "event", "kind": "image", "workflow": ".github/workflows/release.yml", "payload": "tampered.json"},
+    {"type": "event", "kind": "image", "workflow": ".github/workflows/release.yml", "payload": "signed-ok.json"}
+  ],
+  "expected": {
+    "rules": ["IMG-001", "IMG-002", "IMG-003"],
+    "layers": ["static"],
+    "rollup": true,
+    "min_rollup_score": 90
+  }
+}

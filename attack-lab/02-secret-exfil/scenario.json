@@ -1,0 +1,15 @@
+{
+  "name": "02 Secret exfiltration",
+  "steps": [
+    {"type": "scan_workflow", "file": "workflow.yml", "workflow": ".github/workflows/ci.yml"},
+    {"type": "scan_secrets", "dir": "leaky-repo", "workflow": ".github/workflows/ci.yml"},
+    {"type": "github_webhook", "event": "workflow_run", "payload": "workflow_run.json"}
+  ],
+  "expected": {
+    "rules": ["SEC-001", "SEC-002", "GL-*", "BEH-001"],
+    "behaviour_rules": ["new_outbound_domain"],
+    "layers": ["static", "behaviour"],
+    "rollup": true,
+    "min_rollup_score": 90
+  }
+}

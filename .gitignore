@@ -1,0 +1,22 @@
+# Environment files and secrets
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# Node.js
+node_modules/
+dashboard/node_modules/
+dashboard/dist/
+
+# Logs and local files
+*.log
+.DS_Store
+Thumbs.db

@@ -1,0 +1,13 @@
+{
+  "name": "03 Dependency typosquatting",
+  "steps": [
+    {"type": "event", "kind": "dependency", "workflow": ".github/workflows/ci.yml", "manifest_file": "requirements.txt"},
+    {"type": "event", "kind": "dependency", "workflow": ".github/workflows/ci.yml", "manifest_file": "package.json"}
+  ],
+  "expected": {
+    "rules": ["DEP-001", "DEP-002", "DEP-004"],
+    "layers": ["static"],
+    "rollup": true,
+    "min_rollup_score": 70
+  }
+}

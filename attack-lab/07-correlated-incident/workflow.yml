@@ -1,0 +1,22 @@
+# Intentionally vulnerable. Never use in a real repository.
+# Reused by scenario 07 to generate the static PPE-001 signal.
+name: Release
+on:
+  pull_request_target:
+    types: [opened, synchronize]
+permissions: write-all
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Build and push
+        run: |
+          docker build -t myapp:latest .
+          docker push myapp:latest
+      - name: Debug token
+        run: echo "deploy token is $DEPLOY_TOKEN"

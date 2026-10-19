@@ -1,0 +1,6 @@
+# Intentionally suspicious. Do not pip install this file.
+--extra-index-url http://pypi.internal.test/simple
+reqeusts==2.31.0
+numpy==1.26.4
+colourama==0.4.6
+flask==3.0.3

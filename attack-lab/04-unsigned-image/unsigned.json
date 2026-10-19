@@ -1,0 +1,4 @@
+{
+  "image": "ghcr.io/example-org/web:latest",
+  "signatures": []
+}

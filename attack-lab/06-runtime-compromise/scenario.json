@@ -1,0 +1,16 @@
+{
+  "name": "06 Runtime compromise",
+  "steps": [
+    {
+      "type": "falco",
+      "file": "falco_events.jsonl",
+      "workflow": "runner-build"
+    }
+  ],
+  "expected": {
+    "rules": ["RT-SHELL", "RT-MINER"],
+    "layers": ["runtime"],
+    "rollup": true,
+    "min_rollup_score": 90
+  }
+}
