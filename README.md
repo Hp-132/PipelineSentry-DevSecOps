@@ -24,31 +24,31 @@ PipelineSentry explores a unified approach to pipeline security by combining det
 ## System Architecture
 
 ```mermaid
+%%{init: {"flowchart": {"htmlLabels": true, "nodeSpacing": 65, "rankSpacing": 65, "useMaxWidth": false}, "themeVariables": {"fontSize": "16px"}}}%%
 flowchart TD
-    A["CI/CD Events and Webhooks"] --> B["FastAPI Ingestion"]
-    B --> C["RabbitMQ Message Broker"]
-    C --> D["Detection Engine"]
+    A["<div style='width:240px'>CI/CD Events and Webhooks</div>"] --> B["<div style='width:240px'>FastAPI Ingestion</div>"]
+    B --> C["<div style='width:240px'>RabbitMQ Message Broker</div>"]
+    C --> D["<div style='width:240px'>Detection Engine</div>"]
 
-    D --> E["Static Detection"]
-    D --> F["Behavioural Detection"]
-    D --> G["Runtime Detection"]
-    D --> H["Supply-Chain Security"]
+    D --> E["<div style='width:210px'>Static Detection</div>"]
+    D --> F["<div style='width:210px'>Behavioural Detection</div>"]
+    D --> G["<div style='width:210px'>Runtime Detection</div>"]
+    D --> H["<div style='width:210px'>Supply-Chain Security</div>"]
 
-    E --> I["Event Correlation"]
+    E --> I["<div style='width:240px'>Event Correlation</div>"]
     F --> I
     G --> I
     H --> I
 
-    I --> J["PostgreSQL"]
-    I --> K["Redis Cache"]
-    I --> L["Response and Recovery"]
+    I --> J["<div style='width:210px'>PostgreSQL Database</div>"]
+    I --> K["<div style='width:210px'>Redis Cache</div>"]
+    I --> L["<div style='width:240px'>Response and Recovery</div>"]
 
-    J --> M["React Dashboard"]
+    J --> M["<div style='width:240px'>React Security Dashboard</div>"]
 
-    classDef service fill:#f0edff,stroke:#9b87f5,color:#222222,stroke-width:1px
+    classDef service fill:#f0edff,stroke:#9b87f5,color:#222,stroke-width:1px
     class A,B,C,D,E,F,G,H,I,J,K,L,M service
 ```
-
 The architecture separates event ingestion, detection, correlation, storage, and visualization. RabbitMQ supports asynchronous processing, PostgreSQL stores persistent application data, and Redis supports caching and deduplication. The dashboard provides a centralized view of security activity.
 
 *The diagram represents the intended high-level design; individual integrations depend on their implementation status.*
