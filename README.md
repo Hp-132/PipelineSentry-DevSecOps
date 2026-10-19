@@ -24,7 +24,7 @@ PipelineSentry explores a unified approach to pipeline security by combining det
 ## System Architecture
 
 ```mermaid
-%%{init: {"flowchart": {"nodeSpacing": 85, "rankSpacing": 65, "useMaxWidth": true}, "themeVariables": {"fontSize": "16px"}}}%%
+%%{init: {"flowchart": {"nodeSpacing": 95, "rankSpacing": 65, "useMaxWidth": true}, "themeVariables": {"fontSize": "16px"}}}%%
 flowchart TD
     A["CI/CD Events and<br/>Webhooks"] --> B["FastAPI Ingestion"]
     B --> C["RabbitMQ Message<br/>Broker"]
