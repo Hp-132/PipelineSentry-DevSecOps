@@ -23,22 +23,30 @@ PipelineSentry explores a unified approach to pipeline security by combining det
 
 ## System Architecture
 
-```mermaid id="pl8c9d"
+```mermaid
 flowchart TD
-    A[CI/CD Events and Webhooks] --> B[FastAPI Ingestion Layer]
-    B --> C[RabbitMQ Message Broker]
-    C --> D[Detection Engine]
-    D --> E[Static Detection]
-    D --> F[Behavioural Detection]
-    D --> G[Runtime Detection]
-    E --> H[Event Correlation]
-    F --> H
-    G --> H
-    H --> I[PostgreSQL]
-    H --> J[Redis]
-    I --> K[React Dashboard]
-    H --> L[Response and Recovery]
-    M[Supply-Chain Security and Policy Controls] --> H
+    A["CI/CD Events and Webhooks"] --> B["FastAPI Ingestion"]
+    B --> C["RabbitMQ Message Broker"]
+    C --> D["Detection Engine"]
+
+    D --> E["Static Detection"]
+    D --> F["Behavioural Detection"]
+    D --> G["Runtime Detection"]
+    D --> H["Supply-Chain Security"]
+
+    E --> I["Event Correlation"]
+    F --> I
+    G --> I
+    H --> I
+
+    I --> J["PostgreSQL"]
+    I --> K["Redis Cache"]
+    I --> L["Response and Recovery"]
+
+    J --> M["React Dashboard"]
+
+    classDef service fill:#f0edff,stroke:#9b87f5,color:#222222,stroke-width:1px
+    class A,B,C,D,E,F,G,H,I,J,K,L,M service
 ```
 
 The architecture separates event ingestion, detection, correlation, storage, and visualization. RabbitMQ supports asynchronous processing, PostgreSQL stores persistent application data, and Redis supports caching and deduplication. The dashboard provides a centralized view of security activity.
