@@ -1,58 +1,74 @@
 # PipelineSentry
+### CI/CD Pipeline Attack Detection and Defence
 
-CI/CD pipeline attack detection for a final-year BTech CSE Cloud DevOps project.
-This README is completed in the final phase.
+PipelineSentry is a DevSecOps security platform designed to detect suspicious activity in CI/CD pipelines, correlate security events, and support defensive workflows. It aims to improve software delivery security through layered threat detection, centralized monitoring, and security-focused automation.
 
-## Architecture
 
-**Member 1** (Complete): Event ingestion, static/behaviour/runtime detection, correlation, deduplication, alert persistence.
 
-**Member 2** (Stub): Response, recovery, supply-chain, policy modules (not implemented).
+CI/CD pipelines are a critical part of modern software development, but compromised credentials, malicious workflow changes, and vulnerable software dependencies can introduce security risks before applications reach production.
 
-**Frontend (Dashboard)**: Premium React UI for alerts, incidents, attack lab, and system health.
+PipelineSentry explores a unified approach to pipeline security by combining detection, event correlation, attack simulation, and defensive controls within a single architecture.
 
-## Quick Start
+## Key Features
 
-### Backend (Docker)
+- **Multi-Layer Threat Detection:** Analyse pipeline activity through static rules, behavioural patterns, and runtime signals.
+- **Event Correlation:** Connect related findings and reduce duplicate security alerts.
+- **Attack Simulation Lab:** Evaluate detection capabilities using controlled CI/CD attack scenarios.
+- **Centralized Security Dashboard:** Monitor alerts, system health, and security events through a unified interface.
+- **Asynchronous Event Processing:** Use message-based processing to decouple event ingestion from downstream analysis.
+- **Alert Deduplication and Caching:** Reduce repeated processing and improve alert-handling efficiency.
+- **Incident Response and Recovery:** Support structured response and recovery workflows as these modules are implemented.
+- **Software Supply-Chain Security:** Explore SBOM generation, artifact verification, and dependency security.
+- **Policy-Based Security:** Support security policy definition and validation for pipeline configurations.
 
-```bash
-cd C:\Users\Hensi\Downloads\PipelineSentry
-cp .env.example .env      # edit passwords if needed
-make up                   # or: .\scripts\make.ps1 up
+## System Architecture
+
+```mermaid id="pl8c9d"
+flowchart TD
+    A[CI/CD Events and Webhooks] --> B[FastAPI Ingestion Layer]
+    B --> C[RabbitMQ Message Broker]
+    C --> D[Detection Engine]
+    D --> E[Static Detection]
+    D --> F[Behavioural Detection]
+    D --> G[Runtime Detection]
+    E --> H[Event Correlation]
+    F --> H
+    G --> H
+    H --> I[PostgreSQL]
+    H --> J[Redis]
+    I --> K[React Dashboard]
+    H --> L[Response and Recovery]
+    M[Supply-Chain Security and Policy Controls] --> H
 ```
 
-Services available:
-- **Detection API** — `http://localhost:8000` (FastAPI)
-- **API Docs** — `http://localhost:8000/docs`
-- **RabbitMQ UI** — `http://localhost:15672` (default: guest/guest)
+The architecture separates event ingestion, detection, correlation, storage, and visualization. RabbitMQ supports asynchronous processing, PostgreSQL stores persistent application data, and Redis supports caching and deduplication. The dashboard provides a centralized view of security activity.
 
-### Frontend (Dashboard)
+*The diagram represents the intended high-level design; individual integrations depend on their implementation status.*
 
-```powershell
-cd C:\Users\Hensi\Downloads\PipelineSentry\dashboard
-npm install
-npm run dev
-```
+## Technology Stack
 
-Dashboard available at `http://localhost:5173`
+| Layer | Technologies |
+|---|---|
+| Backend | Python, FastAPI |
+| Database and ORM | PostgreSQL, SQLAlchemy |
+| Message Broker | RabbitMQ |
+| Caching | Redis |
+| Frontend | React, TypeScript, Vite |
+| Styling | Tailwind CSS |
+| API Integration | Axios |
+| Containerization | Docker, Docker Compose |
+| Testing | pytest |
+| Security Tooling | Semgrep, Trivy, CycloneDX/SPDX, Cosign, OPA/Rego, Kyverno, where integrated |
 
-### Run a Scenario
+## Design Principles
 
-```bash
-make attack ID=01         # or: .\scripts\make.ps1 attack 01
-# or run from the dashboard UI: Attack Lab → Run Scenario
-```
+- **Layered security:** Combine multiple detection methods rather than relying on a single signal.
+- **Modular architecture:** Separate detection, correlation, monitoring, and defensive components.
+- **Scalable processing:** Decouple event ingestion from analysis through message-based communication.
+- **Traceability:** Maintain structured security findings and support investigation workflows.
+- **Safe testing:** Use controlled attack simulations and synthetic events to evaluate defensive behaviour.
 
-## Key URLs
+## Project Objective
 
-| Component | URL | Purpose |
-|-----------|-----|---------|
-| Dashboard | http://localhost:5173 | UI for alerts, incidents, attack lab |
-| API | http://localhost:8000 | FastAPI detection backend |
-| API Docs | http://localhost:8000/docs | Swagger documentation |
-| RabbitMQ | http://localhost:15672 | Message queue management |
-| Health | http://localhost:8000/health | Service health check |
+PipelineSentry aims to demonstrate how modern DevSecOps practices can be applied to protect CI/CD pipelines. By combining threat detection, event correlation, monitoring, and defensive security integrations, the project provides a foundation for studying pipeline attack detection and improving software supply-chain resilience.
 
-## Cleanup
-
-`make down` stops containers and keeps data. `make reset` deletes volumes.
