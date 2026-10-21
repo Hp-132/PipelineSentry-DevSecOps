@@ -35,6 +35,26 @@ PipelineSentry explores a unified approach to pipeline security by combining det
 Give Docker at least **4 GB of RAM** and free ports `8000`, `5000`, `15672` and `5173`. The image already contains
 `opa`, `cosign` and `gitleaks`, so you do not need to install them.
 
+### One command
+
+The run-all script starts everything (backend and dashboard), runs every attack scenario and the end-to-end demo, then
+runs all checks. It ends with a PASS/FAIL summary and leaves the stack running so you can explore it.
+
+```powershell
+# Windows (PowerShell)
+powershell -ExecutionPolicy Bypass -File .\scripts\run-all.ps1        # add -SkipTests for a lighter run
+.\scripts\run-all.ps1 -Down                                            # stop everything afterwards
+```
+
+```bash
+# Linux / macOS
+./scripts/run-all.sh                                                   # add --skip-tests for a lighter run
+./scripts/run-all.sh --down
+```
+
+Other options: `-SkipDashboard` / `--skip-dashboard` (no Node.js needed) and `-Stop` / `--stop` (tear down at the end).
+The steps below do the same thing one command at a time.
+
 ### 1. Start the backend
 
 ```bash
