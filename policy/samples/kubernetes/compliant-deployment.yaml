@@ -1,0 +1,25 @@
+# Passes every policy: approved registry, pinned digest, non-root, no escalation, resource limits.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: compliant-app
+  namespace: demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: compliant-app}
+  template:
+    metadata:
+      labels: {app: compliant-app}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: app
+          image: registry:5000/demo/app@sha256:4e6f2b1c7d8a9e0f1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f7081
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            limits: {cpu: 500m, memory: 256Mi}

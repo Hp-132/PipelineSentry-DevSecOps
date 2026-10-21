@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Play, AlertCircle, CheckCircle, Clock, Zap } from 'lucide-react'
 import { SCENARIO_DEFS, Alert as AlertType } from '@/types'
-import { api } from '@/api'
+import { api, describeError } from '@/api'
 import { SeverityBadge } from '@/components/SeverityBadge'
 import { useToast } from '@/components/Toast'
 
@@ -16,14 +16,16 @@ export const AttackLab: React.FC = () => {
     setLoading(scenarioId)
     try {
       const res = await api.scenarios.run(scenarioId)
-      const runId = res.run_id || `scenario-${scenarioId}`
+      const runId = res.run_id
 
-      // Poll for results
+      // Poll until every queued event has been processed, then show this run's alerts
       let attempts = 0
       const maxAttempts = 30
       while (attempts < maxAttempts) {
-        const alerts = await api.alerts.list({ attack_id: scenarioId, limit: 50 })
-        if (alerts && alerts.length > 0) {
+        const statuses = await Promise.all(res.event_ids.map(id => api.events.status(id)))
+        const finished = statuses.every(s => !['queued', 'processing', 'retrying'].includes(s.status))
+        const alerts = finished ? await api.alerts.list({ run_id: runId, limit: 50 }) : []
+        if (finished) {
           setResults(prev => ({
             ...prev,
             [scenarioId]: { alerts, runId },
@@ -39,7 +41,7 @@ export const AttackLab: React.FC = () => {
         toast.error(`Scenario ${scenarioId} timed out waiting for results`)
       }
     } catch (err) {
-      toast.error(`Failed to run scenario ${scenarioId}`)
+      toast.error(`Failed to run scenario ${scenarioId}: ${describeError(err)}`)
       console.error(err)
     } finally {
       setRunning(null)

@@ -1,0 +1,23 @@
+# Denied only because the image is referenced by a mutable tag instead of a digest.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tagged-app
+  namespace: demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: tagged-app}
+  template:
+    metadata:
+      labels: {app: tagged-app}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: app
+          image: ghcr.io/pipelinesentry/app:1.4.2
+          securityContext:
+            allowPrivilegeEscalation: false
+          resources:
+            limits: {cpu: 500m, memory: 256Mi}

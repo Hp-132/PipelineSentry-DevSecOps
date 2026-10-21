@@ -16,6 +16,11 @@ node_modules/
 dashboard/node_modules/
 dashboard/dist/
 
+# Local SQLite database and demo cosign keys (never commit private keys)
+pipelinesentry.db
+.cosign/
+cosign.key
+
 # Logs and local files
 *.log
 .DS_Store

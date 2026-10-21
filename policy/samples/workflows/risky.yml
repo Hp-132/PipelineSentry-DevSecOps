@@ -1,0 +1,12 @@
+# Denied: write-all token, unpinned action, self-hosted runner for untrusted PR code, unpinned job image.
+name: PR build
+on:
+  pull_request_target:
+permissions: write-all
+jobs:
+  build:
+    runs-on: [self-hosted, linux]
+    container: node:20
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm ci && npm test

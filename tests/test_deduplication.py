@@ -11,7 +11,7 @@ All tests use fakeredis so no external Redis is required.
 """
 
 import time
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 

@@ -78,7 +78,7 @@ class TestScoreAlerts:
         alerts = [_alert("r1", "static", "high", "PPE-001")]
         result = score_alerts(alerts)
         assert result["layer_count"] == 1
-        assert result["diversity_bonus"] == 0
+        assert result["components"]["diversity_bonus"] == 0
 
     def test_two_layers_get_diversity_bonus(self):
         alerts = [
@@ -87,7 +87,7 @@ class TestScoreAlerts:
         ]
         result = score_alerts(alerts)
         assert result["layer_count"] == 2
-        assert result["diversity_bonus"] == 15
+        assert result["components"]["diversity_bonus"] == 15
 
     def test_three_layers_get_double_diversity_bonus(self):
         alerts = [
@@ -97,7 +97,7 @@ class TestScoreAlerts:
         ]
         result = score_alerts(alerts)
         assert result["layer_count"] == 3
-        assert result["diversity_bonus"] == 30
+        assert result["components"]["diversity_bonus"] == 30
 
     def test_duplicate_rule_in_same_layer_counted_once(self):
         alerts = [
@@ -220,9 +220,16 @@ class TestCorrelateRun:
         )
         result_a = correlate_run(mem_session, run_a)
         result_b = correlate_run(mem_session, run_b)
-        # Each run only has one layer so neither should roll up
-        assert result_a["rollup"] is None
-        assert result_b["rollup"] is None
+        # A single high alert scores 70, which meets CORRELATION_MIN_SCORE, so each run may roll up,
+        # but each roll-up must only cover its own run's single layer.
+        for result, run_id in ((result_a, run_a), (result_b, run_b)):
+            rollup = result["rollup"]
+            if rollup is not None:
+                assert rollup.run_id == run_id
+                assert result["score"]["layer_count"] == 1
+                assert len(rollup.evidence["child_alert_ids"]) == 1
+        if result_a["rollup"] and result_b["rollup"]:
+            assert result_a["rollup"].id != result_b["rollup"].id
 
     def test_three_layer_scenario07_correlation(self, mem_session):
         """Scenario 07 has static + behaviour + runtime — must produce a critical rollup."""

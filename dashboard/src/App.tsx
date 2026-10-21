@@ -8,6 +8,10 @@ import { Incidents } from '@/pages/Incidents'
 import { AttackLab } from '@/pages/AttackLab'
 import { Events } from '@/pages/Events'
 import { Health } from '@/pages/Health'
+import { Response } from '@/pages/Response'
+import { Recovery } from '@/pages/Recovery'
+import { SupplyChain } from '@/pages/SupplyChain'
+import { Policy } from '@/pages/Policy'
 import { api } from '@/api'
 import { HealthCheck } from '@/types'
 
@@ -28,6 +32,10 @@ export default function App() {
     overview: { title: 'Overview', component: Overview },
     alerts: { title: 'Alerts', component: Alerts },
     incidents: { title: 'Incidents & Correlation', component: Incidents },
+    response: { title: 'Response Actions', component: Response },
+    recovery: { title: 'Recovery', component: Recovery },
+    'supply-chain': { title: 'Supply Chain', component: SupplyChain },
+    policy: { title: 'Policy Evaluation', component: Policy },
     'attack-lab': { title: 'Attack Lab', component: AttackLab },
     events: { title: 'Events', component: Events },
     health: { title: 'System Health', component: Health },

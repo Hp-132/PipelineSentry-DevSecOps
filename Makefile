@@ -2,7 +2,7 @@ COMPOSE = docker compose
 # Attack scenario ID: 01-07
 ID ?= 01
 
-.PHONY: env up down reset test test-unit logs ps baseline attack demo
+.PHONY: env up down reset test test-unit logs ps baseline attack demo demo-m2 test-policy test-kyverno
 
 env:
 	@test -f .env || (cp .env.example .env && echo "Created .env from .env.example")
@@ -26,7 +26,7 @@ test-unit: env
 	$(COMPOSE) run --rm --no-deps api pytest -q -m "not integration"
 
 logs:
-	$(COMPOSE) logs -f --tail=100 api worker
+	$(COMPOSE) logs -f --tail=100 api worker responder
 
 ps:
 	$(COMPOSE) ps
@@ -55,3 +55,15 @@ demo:
 	$(COMPOSE) exec -T api python attack-lab/run.py 07
 	@echo ""
 	@echo "=== Demo complete. Check /alerts and /health above. ==="
+
+# Member 2: detection -> response -> recovery -> signatures -> SBOM -> policy
+demo-m2:
+	$(COMPOSE) exec -T api python scripts/demo_member2.py
+
+# OPA/Rego unit tests (opa ships in the image)
+test-policy: env
+	$(COMPOSE) run --rm --no-deps api opa test policy/opa -v
+
+# Kyverno policy tests, offline (no cluster needed)
+test-kyverno:
+	docker run --rm -v "$(CURDIR)/policy:/policy" ghcr.io/kyverno/kyverno-cli:v1.13.2 test /policy/kyverno

@@ -1,0 +1,38 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: pipelinesentry-require-pinned-approved-images
+  annotations:
+    policies.kyverno.io/title: Require digest-pinned images from approved registries
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/description: Mirrors POL-K8S-005/006 from policy/opa/kubernetes.rego.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-digest
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+      validate:
+        message: "Images must be referenced by digest (POL-K8S-005)."
+        pattern:
+          spec:
+            =(initContainers):
+              - image: "*@sha256:*"
+            containers:
+              - image: "*@sha256:*"
+    - name: approved-registries
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+      validate:
+        message: "Images must come from an approved registry (POL-K8S-006)."
+        pattern:
+          spec:
+            =(initContainers):
+              - image: "registry:5000/* | ghcr.io/pipelinesentry/*"
+            containers:
+              - image: "registry:5000/* | ghcr.io/pipelinesentry/*"

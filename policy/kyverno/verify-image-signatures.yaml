@@ -1,0 +1,37 @@
+# Admission-time signature check with the same cosign key the supply-chain module signs with.
+# Needs a cluster that can reach the registry, so it is NOT part of the offline `kyverno test` suite.
+# Replace the placeholder with the contents of $COSIGN_KEY_DIR/cosign.pub before applying.
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: pipelinesentry-verify-image-signatures
+  annotations:
+    policies.kyverno.io/title: Only admit images signed by the PipelineSentry key
+    policies.kyverno.io/severity: critical
+spec:
+  validationFailureAction: Enforce
+  webhookTimeoutSeconds: 30
+  rules:
+    - name: verify-cosign-signature
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+      verifyImages:
+        - imageReferences:
+            - "registry:5000/*"
+            - "ghcr.io/pipelinesentry/*"
+          mutateDigest: true
+          verifyDigest: true
+          required: true
+          attestors:
+            - entries:
+                - keys:
+                    publicKeys: |-
+                      -----BEGIN PUBLIC KEY-----
+                      REPLACE_WITH_COSIGN_PUBLIC_KEY
+                      -----END PUBLIC KEY-----
+                    rekor:
+                      ignoreTlog: true
+                    ctlog:
+                      ignoreSCT: true

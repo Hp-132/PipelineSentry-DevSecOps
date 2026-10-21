@@ -1,0 +1,50 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: pipelinesentry-disallow-privileged
+  annotations:
+    policies.kyverno.io/title: Disallow privileged containers and host access
+    policies.kyverno.io/severity: critical
+    policies.kyverno.io/description: Mirrors POL-K8S-001/003/004 from policy/opa/kubernetes.rego.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: privileged-containers
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+      validate:
+        message: "Privileged containers are not allowed (POL-K8S-001)."
+        pattern:
+          spec:
+            =(initContainers):
+              - =(securityContext):
+                  =(privileged): "false"
+            containers:
+              - =(securityContext):
+                  =(privileged): "false"
+    - name: host-namespaces
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+      validate:
+        message: "Sharing host namespaces is not allowed (POL-K8S-003)."
+        pattern:
+          spec:
+            =(hostNetwork): "false"
+            =(hostPID): "false"
+            =(hostIPC): "false"
+    - name: host-path-volumes
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+      validate:
+        message: "hostPath volumes are not allowed (POL-K8S-004)."
+        pattern:
+          spec:
+            =(volumes):
+              - X(hostPath): "null"
