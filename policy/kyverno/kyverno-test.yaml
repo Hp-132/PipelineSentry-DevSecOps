@@ -1,0 +1,76 @@
+# Offline policy tests: docker run --rm -v "$PWD/policy:/policy" ghcr.io/kyverno/kyverno-cli:v1.13.2 test /policy/kyverno
+apiVersion: cli.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: pipelinesentry-kyverno
+policies:
+  - disallow-privileged.yaml
+  - require-pinned-approved-images.yaml
+resources:
+  - ../samples/kubernetes/compliant-deployment.yaml
+  - ../samples/kubernetes/privileged-pod.yaml
+  - ../samples/kubernetes/unpinned-image.yaml
+results:
+  # compliant Deployment: every rule passes (Kyverno auto-generates rules for Pod controllers)
+  - policy: pipelinesentry-disallow-privileged
+    rule: autogen-privileged-containers
+    resources: [compliant-app]
+    kind: Deployment
+    result: pass
+  - policy: pipelinesentry-disallow-privileged
+    rule: autogen-host-path-volumes
+    resources: [compliant-app]
+    kind: Deployment
+    result: pass
+  - policy: pipelinesentry-require-pinned-approved-images
+    rule: autogen-require-digest
+    resources: [compliant-app]
+    kind: Deployment
+    result: pass
+  - policy: pipelinesentry-require-pinned-approved-images
+    rule: autogen-approved-registries
+    resources: [compliant-app]
+    kind: Deployment
+    result: pass
+  # privileged Pod: denied by every rule
+  - policy: pipelinesentry-disallow-privileged
+    rule: privileged-containers
+    resources: [debug-runner]
+    kind: Pod
+    result: fail
+  - policy: pipelinesentry-disallow-privileged
+    rule: host-namespaces
+    resources: [debug-runner]
+    kind: Pod
+    result: fail
+  - policy: pipelinesentry-disallow-privileged
+    rule: host-path-volumes
+    resources: [debug-runner]
+    kind: Pod
+    result: fail
+  - policy: pipelinesentry-require-pinned-approved-images
+    rule: require-digest
+    resources: [debug-runner]
+    kind: Pod
+    result: fail
+  - policy: pipelinesentry-require-pinned-approved-images
+    rule: approved-registries
+    resources: [debug-runner]
+    kind: Pod
+    result: fail
+  # tagged image: approved registry, but not pinned
+  - policy: pipelinesentry-require-pinned-approved-images
+    rule: autogen-require-digest
+    resources: [tagged-app]
+    kind: Deployment
+    result: fail
+  - policy: pipelinesentry-require-pinned-approved-images
+    rule: autogen-approved-registries
+    resources: [tagged-app]
+    kind: Deployment
+    result: pass
+  - policy: pipelinesentry-disallow-privileged
+    rule: autogen-privileged-containers
+    resources: [tagged-app]
+    kind: Deployment
+    result: pass

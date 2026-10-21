@@ -10,6 +10,20 @@ x-app-env: &app-env
   ALLOW_UNSIGNED_WEBHOOKS: ${ALLOW_UNSIGNED_WEBHOOKS:-false}
   GITHUB_WEBHOOK_SECRET: ${GITHUB_WEBHOOK_SECRET:-}
   SCAN_ROOT: /app
+  CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173}
+  # Member 2: response / supply chain / policy (see INTEGRATION.md)
+  RESPONSE_MODE: ${RESPONSE_MODE:-dry_run}
+  RESPONSE_MIN_SCORE: ${RESPONSE_MIN_SCORE:-70}
+  RESPONSE_LIVE_ENABLED: ${RESPONSE_LIVE_ENABLED:-false}
+  RESPONSE_LIVE_ACTIONS: ${RESPONSE_LIVE_ACTIONS:-cancel_pipeline}
+  RESPONSE_API_TOKEN: ${RESPONSE_API_TOKEN:-}
+  GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+  GITHUB_REPOSITORY: ${GITHUB_REPOSITORY:-}
+  COSIGN_KEY_DIR: /data/cosign
+  COSIGN_PASSWORD: ${COSIGN_PASSWORD:-}
+  INSECURE_REGISTRIES: registry:5000
+  SIGNING_ALLOWED_REGISTRIES: registry:5000
+  ALLOWED_REGISTRIES: ${ALLOWED_REGISTRIES:-registry:5000,ghcr.io/pipelinesentry}
 
 x-app-depends: &app-depends
   postgres:
@@ -60,11 +74,29 @@ services:
       timeout: 3s
       retries: 10
 
+  # Local OCI registry for the supply-chain signing demo (plain HTTP, bound to localhost only)
+  registry:
+    image: registry:2.8.3
+    ports:
+      - "127.0.0.1:${REGISTRY_PORT:-5000}:5000"
+    volumes:
+      - registrydata:/var/lib/registry
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:5000/v2/"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   api:
     build: .
     image: pipelinesentry:latest
     environment: *app-env
-    depends_on: *app-depends
+    depends_on:
+      <<: *app-depends
+      registry:
+        condition: service_healthy
+    volumes:
+      - cosignkeys:/data/cosign
     ports:
       - "127.0.0.1:${API_PORT:-8000}:8000"
     healthcheck:
@@ -80,6 +112,18 @@ services:
     environment: *app-env
     depends_on:
       <<: *app-depends
+      api:
+        condition: service_started
+    restart: unless-stopped
+
+  # Member 2: polls for new correlated incidents and responds in RESPONSE_MODE (dry_run by default)
+  responder:
+    image: pipelinesentry:latest
+    command: ["python", "-m", "response.worker"]
+    environment: *app-env
+    depends_on:
+      postgres:
+        condition: service_healthy
       api:
         condition: service_started
     restart: unless-stopped
@@ -111,3 +155,5 @@ services:
 volumes:
   pgdata:
   rabbitdata:
+  registrydata:
+  cosignkeys:

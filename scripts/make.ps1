@@ -32,7 +32,13 @@ switch ($Target) {
     }
     "test"      { Ensure-Env; Invoke-Compose up -d --build --wait; Invoke-Compose run --rm api pytest -q }
     "test-unit" { Ensure-Env; Invoke-Compose build api; Invoke-Compose run --rm --no-deps api pytest -q -m "not integration" }
-    "logs"      { Invoke-Compose logs -f --tail=100 api worker }
+    "logs"      { Invoke-Compose logs -f --tail=100 api worker responder }
+    "demo-m2"   { Invoke-Compose exec -T api python scripts/demo_member2.py }
+    "test-policy" { Ensure-Env; Invoke-Compose run --rm --no-deps api opa test policy/opa -v }
+    "test-kyverno" {
+        docker run --rm -v "${PWD}/policy:/policy" ghcr.io/kyverno/kyverno-cli:v1.13.2 test /policy/kyverno
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    }
     "ps"        { Invoke-Compose ps }
     "baseline"  { Invoke-Compose exec -T worker python -m detection.behaviour.baseline }
     "attack"    { Invoke-Compose exec -T api python attack-lab/run.py $Id }
@@ -44,5 +50,5 @@ switch ($Target) {
         }
         Write-Host "`n=== Demo complete. ==="
     }
-    default     { Write-Host "Targets: up, down, reset [-Force], test, test-unit, logs, ps, baseline, attack <01-07>, demo" }
+    default     { Write-Host "Targets: up, down, reset [-Force], test, test-unit, logs, ps, baseline, attack <01-07>, demo, demo-m2, test-policy, test-kyverno" }
 }

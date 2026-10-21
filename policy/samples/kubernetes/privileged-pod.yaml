@@ -1,0 +1,24 @@
+# Denied: privileged container, host namespaces, hostPath mount, mutable public image, extra capabilities.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: debug-runner
+  namespace: ci
+spec:
+  hostNetwork: true
+  hostPID: true
+  containers:
+    - name: shell
+      image: alpine:latest
+      command: ["sh", "-c", "sleep infinity"]
+      securityContext:
+        privileged: true
+        capabilities:
+          add: ["SYS_ADMIN"]
+      volumeMounts:
+        - name: docker-sock
+          mountPath: /var/run/docker.sock
+  volumes:
+    - name: docker-sock
+      hostPath:
+        path: /var/run/docker.sock

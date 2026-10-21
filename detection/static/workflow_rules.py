@@ -261,7 +261,8 @@ class _Scanner:
             return
         key = f"{job_id}:{index}:{stripped[:60]}"
         location = {**where, "line": self.line_of(stripped), "snippet": stripped}
-        uses_secret = any("secrets." in e for e in EXPRESSION.findall(stripped)) or _references_env(stripped, secret_env)
+        leaked_env = sorted(n for n in secret_env if _references_env(stripped, {n}))
+        uses_secret = any("secrets." in e for e in EXPRESSION.findall(stripped)) or bool(leaked_env)
 
         if uses_secret and NETWORK_COMMAND.search(stripped):
             hosts = URL_HOST.findall(stripped)
@@ -271,7 +272,7 @@ class _Scanner:
                     "SEC-002", "Secret sent to an external host by a network command",
                     "critical" if untrusted else "high",
                     "Remove the command, rotate the exposed secret and restrict runner egress.",
-                    key=key, destination_hosts=untrusted or hosts, **location,
+                    key=key, destination_hosts=untrusted or hosts, secret_variables=leaked_env, **location,
                 )
         elif uses_secret and PRINT_COMMAND.search(stripped):
             piped_to_login = "--password-stdin" in stripped or "GITHUB_ENV" in stripped
@@ -279,7 +280,7 @@ class _Scanner:
                 self.add(
                     "SEC-003", "Secret printed to the build log", "high",
                     "Never echo secrets; base64 or other encoding also bypasses log masking.",
-                    key=key, encoded="base64" in stripped, **location,
+                    key=key, encoded="base64" in stripped, secret_variables=leaked_env, **location,
                 )
 
         if ENV_DUMP.match(stripped) and secret_env:

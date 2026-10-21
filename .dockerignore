@@ -5,3 +5,6 @@
 *.db
 .venv
 venv
+.cosign
+dashboard/node_modules
+dashboard/dist

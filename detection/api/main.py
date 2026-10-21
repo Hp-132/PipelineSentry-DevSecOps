@@ -4,7 +4,8 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from uuid import NAMESPACE_URL, uuid4, uuid5
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request, Response
+from fastapi import Depends, FastAPI, Header, HTTPException, Path, Query, Request, Response
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 from sqlalchemy import select, text
@@ -38,6 +39,9 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="PipelineSentry Detection API", version="1.0.0", lifespan=lifespan)
+# The dashboard (Vite, :5173) calls the API from the browser
+app.add_middleware(CORSMiddleware, allow_origins=config.CORS_ORIGINS, allow_methods=["GET", "POST"],
+                   allow_headers=["Content-Type", "X-Response-Token"])
 
 
 @app.exception_handler(UnsafePathError)
@@ -183,17 +187,38 @@ def local_event(request: LocalEventRequest, session: Session = Depends(get_sessi
     return _queued(enqueue(session, [event]))
 
 
-@app.get("/events/{event_id}", response_model=EventStatus)
-def event_status(event_id: str, session: Session = Depends(get_session)):
-    record = session.get(EventRecord, event_id)
-    if record is None:
-        raise HTTPException(404, "event not found")
+def _event_status(record: EventRecord) -> EventStatus:
     return EventStatus(
         event_id=record.id, kind=record.kind, run_id=record.run_id, workflow=record.workflow,
         attack_id=record.attack_id, source=record.source, status=record.status, attempts=record.attempts,
         error=record.error, alert_ids=record.alert_ids or [], received_at=record.received_at,
         processed_at=record.processed_at,
     )
+
+
+@app.get("/events", response_model=list[EventStatus])
+def list_events(
+    session: Session = Depends(get_session),
+    run_id: str | None = None,
+    kind: EventKind | None = None,
+    status: str | None = None,
+    limit: int = Query(default=100, ge=1, le=500),
+    offset: int = Query(default=0, ge=0),
+):
+    query = select(EventRecord)
+    for column, value in {"run_id": run_id, "kind": kind, "status": status}.items():
+        if value is not None:
+            query = query.where(getattr(EventRecord, column) == str(value))
+    query = query.order_by(EventRecord.received_at.desc(), EventRecord.id).limit(limit).offset(offset)
+    return [_event_status(r) for r in session.scalars(query)]
+
+
+@app.get("/events/{event_id}", response_model=EventStatus)
+def event_status(event_id: str, session: Session = Depends(get_session)):
+    record = session.get(EventRecord, event_id)
+    if record is None:
+        raise HTTPException(404, "event not found")
+    return _event_status(record)
 
 
 @app.post("/scan/workflow", response_model=QueuedResponse, status_code=202)
@@ -286,3 +311,37 @@ def timeline(run_id: str, response: Response, session: Session = Depends(get_ses
     cache.set_json(cache_key, result)
     response.headers["X-Cache"] = "miss"
     return result
+
+
+@app.post("/attack-lab/{attack_id}/run", status_code=202)
+def run_attack_scenario(attack_id: str = Path(pattern=r"^0[1-7]$")):
+    """Queue an attack-lab scenario (used by the dashboard). Same steps as `python attack-lab/run.py <id>`."""
+    import httpx
+    lab = attack_lab()
+    folder, scenario = lab.load_scenario(attack_id)
+    run_id = f"attack-{attack_id}-{uuid4().hex[:8]}"
+    # The steps call this API's own endpoints, exactly as the CLI runner does
+    with httpx.Client(base_url=config.SELF_URL, timeout=30) as client:
+        event_ids = [i for step in scenario["steps"] for i in lab.send_step(client, step, folder, run_id, attack_id)]
+    return {"run_id": run_id, "attack_id": attack_id, "name": scenario["name"], "event_ids": event_ids,
+            "expected": scenario["expected"], "status": "queued"}
+
+
+def attack_lab():
+    import importlib.util
+    from pathlib import Path as FilePath
+    spec = importlib.util.spec_from_file_location(
+        "attack_lab_run", FilePath(__file__).resolve().parents[2] / "attack-lab" / "run.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+# Member 2 modules: response, recovery, supply chain and policy
+from policy.routes import router as policy_router  # noqa: E402
+from recovery.routes import router as recovery_router  # noqa: E402
+from response.routes import router as response_router  # noqa: E402
+from supply_chain.routes import router as supply_chain_router  # noqa: E402
+
+for _router in (response_router, recovery_router, supply_chain_router, policy_router):
+    app.include_router(_router)

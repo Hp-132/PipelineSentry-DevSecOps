@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Menu, X, Home, AlertCircle, GitBranch, Beaker, FileText, Server, Settings } from 'lucide-react'
+import { Menu, X, Home, AlertCircle, GitBranch, Beaker, FileText, Server, Settings, ShieldAlert, RotateCcw, Package, FileCheck } from 'lucide-react'
 import { BrandLogo } from './BrandLogo'
 
 interface SidebarProps {
@@ -14,6 +14,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ current, onNavigate }) => {
     { id: 'overview', label: 'Overview', icon: Home },
     { id: 'alerts', label: 'Alerts', icon: AlertCircle },
     { id: 'incidents', label: 'Incidents', icon: GitBranch },
+    { id: 'response', label: 'Response', icon: ShieldAlert },
+    { id: 'recovery', label: 'Recovery', icon: RotateCcw },
+    { id: 'supply-chain', label: 'Supply Chain', icon: Package },
+    { id: 'policy', label: 'Policy', icon: FileCheck },
     { id: 'attack-lab', label: 'Attack Lab', icon: Beaker },
     { id: 'events', label: 'Events', icon: FileText },
     { id: 'health', label: 'System Health', icon: Server },
